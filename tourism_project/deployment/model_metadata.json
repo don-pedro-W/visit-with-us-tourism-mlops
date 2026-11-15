@@ -1,5 +1,5 @@
 {
-  "created_utc": "2026-11-15T21:41:27+00:00",
+  "created_utc": "2026-11-15T22:40:00+00:00",
   "trained_on": "historical generic travel-package purchase outcomes",
   "not_yet_validated_on": "new Wellness Tourism Package",
   "scoring_point": "before sales contact",
@@ -53,7 +53,7 @@
       91
     ]
   ],
-  "mlflow_tracking_enabled": false,
+  "mlflow_tracking_enabled": true,
   "candidate_models": [
     {
       "model": "RandomForest",
