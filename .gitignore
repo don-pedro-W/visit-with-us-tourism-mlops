@@ -1,0 +1,11 @@
+# Ignore local/runtime-only assets; keep the approved dataset and model under version control.
+__pycache__/
+.ipynb_checkpoints/
+.pytest_cache/
+*.py[cod]
+.env
+.venv/
+mlruns/
+tourism_project/outputs/
+tourism_project/registered-artifact/
+tourism_project/published-artifact/

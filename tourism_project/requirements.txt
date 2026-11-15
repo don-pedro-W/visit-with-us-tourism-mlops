@@ -1,0 +1,7 @@
+# Training / CI dependencies; Python 3.11 across GitHub Actions and Community Cloud
+numpy==2.2.6
+pandas==2.2.3
+scikit-learn==1.8.0
+joblib==1.5.3
+mlflow==3.0.1
+pytest==8.4.2

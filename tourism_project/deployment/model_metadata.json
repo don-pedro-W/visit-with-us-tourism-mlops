@@ -1,0 +1,79 @@
+{
+  "created_utc": "2026-11-15T21:41:27+00:00",
+  "trained_on": "historical generic travel-package purchase outcomes",
+  "not_yet_validated_on": "new Wellness Tourism Package",
+  "scoring_point": "before sales contact",
+  "model_family": "RandomForest",
+  "selection_criterion": "3-fold stratified CV average precision on training data",
+  "cv_average_precision": 0.7043494647703085,
+  "best_params": {
+    "classifier__max_depth": null,
+    "classifier__min_samples_leaf": 2,
+    "classifier__n_estimators": 150
+  },
+  "feature_names": [
+    "Age",
+    "NumberOfPersonVisiting",
+    "PreferredPropertyStar",
+    "NumberOfTrips",
+    "Passport",
+    "OwnCar",
+    "NumberOfChildrenVisiting",
+    "MonthlyIncome",
+    "Occupation",
+    "Gender",
+    "MaritalStatus",
+    "Designation",
+    "CityTier"
+  ],
+  "decision_threshold": 0.5,
+  "test_rows": 826,
+  "holdout_positive_rate": 0.19249394673123488,
+  "test_metrics": {
+    "average_precision": 0.7254959782932485,
+    "roc_auc": 0.9150990542464618,
+    "precision_at_0_5": 0.7338709677419355,
+    "recall_at_0_5": 0.5723270440251572,
+    "f1_at_0_5": 0.6431095406360424,
+    "balanced_accuracy_at_0_5": 0.7614258908281708,
+    "brier_score": 0.09400373743321178,
+    "top20_precision": 0.6325301204819277,
+    "top20_recall": 0.660377358490566,
+    "top20_lift": 3.285974085019322,
+    "top20_contact_count": 166,
+    "top20_actual_buyers": 105
+  },
+  "confusion_matrix_0_5": [
+    [
+      634,
+      33
+    ],
+    [
+      68,
+      91
+    ]
+  ],
+  "mlflow_tracking_enabled": false,
+  "candidate_models": [
+    {
+      "model": "RandomForest",
+      "cv_average_precision": 0.7043494647703085,
+      "best_params": {
+        "classifier__max_depth": null,
+        "classifier__min_samples_leaf": 2,
+        "classifier__n_estimators": 150
+      },
+      "trials": 8
+    },
+    {
+      "model": "GradientBoosting",
+      "cv_average_precision": 0.6061025160840482,
+      "best_params": {
+        "classifier__learning_rate": 0.1,
+        "classifier__max_depth": 2,
+        "classifier__n_estimators": 180
+      },
+      "trials": 4
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+name: Tourism propensity — validate, prepare, train and publish
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "tourism_project/deployment/best_model.joblib"
+      - "tourism_project/deployment/model_metadata.json"
+      - "tourism_project/outputs/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tourism-mlops-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  register-dataset:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: tourism_project/requirements.txt
+      - name: Install project dependencies
+        run: pip install -r tourism_project/requirements.txt
+      - name: Validate and register data
+        run: python -m tourism_project.model_building.data_register
+      - uses: actions/upload-artifact@v4
+        with:
+          name: registered-data
+          path: |
+            tourism_project/data/tourism.csv
+            tourism_project/outputs/registration_report.json
+
+  data-prep:
+    needs: register-dataset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: tourism_project/requirements.txt
+      - name: Install project dependencies
+        run: pip install -r tourism_project/requirements.txt
+      - name: Download and verify registered data
+        uses: actions/download-artifact@v4
+        with:
+          name: registered-data
+          path: tourism_project/registered-artifact
+      - name: Confirm repository input agrees with artifact
+        run: cmp tourism_project/data/tourism.csv tourism_project/registered-artifact/data/tourism.csv
+      - name: Clean and split data
+        run: python -m tourism_project.model_building.prep
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prepared-splits
+          path: |
+            tourism_project/outputs/Xtrain.csv
+            tourism_project/outputs/Xtest.csv
+            tourism_project/outputs/ytrain.csv
+            tourism_project/outputs/ytest.csv
+            tourism_project/outputs/preparation_report.json
+
+  model-training:
+    needs: data-prep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: tourism_project/requirements.txt
+      - name: Install project dependencies
+        run: pip install -r tourism_project/requirements.txt
+      - name: Download training and holdout splits
+        uses: actions/download-artifact@v4
+        with:
+          name: prepared-splits
+          path: tourism_project/outputs
+      - name: Tune candidates, track MLflow trials, export best model
+        run: python -m tourism_project.model_building.train
+      - name: Run offline scoring smoke tests
+        run: python -m pytest -q tests
+      - uses: actions/upload-artifact@v4
+        with:
+          name: model-and-evaluation
+          path: |
+            tourism_project/deployment/best_model.joblib
+            tourism_project/deployment/model_metadata.json
+            tourism_project/outputs/experiment_trials.json
+            tourism_project/outputs/holdout_predictions.csv
+            tourism_project/outputs/mlruns/
+
+  publish-model:
+    needs: model-training
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Retrieve winner and its evaluation
+        uses: actions/download-artifact@v4
+        with:
+          name: model-and-evaluation
+          path: tourism_project/published-artifact
+      - name: Commit binary model and model card to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp tourism_project/published-artifact/deployment/best_model.joblib tourism_project/deployment/
+          cp tourism_project/published-artifact/deployment/model_metadata.json tourism_project/deployment/
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tourism_project/deployment/best_model.joblib tourism_project/deployment/model_metadata.json
+          if git diff --cached --quiet; then
+            echo 'No new model changes to publish'
+          else
+            git commit -m 'ci: publish trained model [skip ci]'
+            git push origin HEAD:main
+          fi
